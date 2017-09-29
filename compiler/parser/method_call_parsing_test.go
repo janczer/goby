@@ -9,26 +9,31 @@ import (
 func TestCallExpressionWithKeywordArgument(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected map[string] int
+		expected map[string]interface{}
 	}{
 		{`
 		add(x: 111)
-		`, map[string]int {
+		`, map[string]interface{}{
 			"x": 111,
-		} },
+		}},
 		{`
-		add(x: 111, y: 222)
-		`, map[string]int {
+		add(x:)
+		`, map[string]interface{}{
+			"x": nil,
+		}},
+		{`
+		add(x: 111, y:)
+		`, map[string]interface{}{
 			"x": 111,
-			"y": 222,
-		} },
+			"y": nil,
+		}},
 		{`
 		add(x: 111, y: 222, z: 333)
-		`, map[string]int {
+		`, map[string]interface{}{
 			"x": 111,
 			"y": 222,
 			"z": 333,
-		} },
+		}},
 	}
 
 	for i, tt := range tests {
@@ -37,7 +42,7 @@ func TestCallExpressionWithKeywordArgument(t *testing.T) {
 		program, err := p.ParseProgram()
 
 		if err != nil {
-			t.Fatalf("At case %d " + err.Message, i)
+			t.Fatalf("At case %d "+err.Message, i)
 		}
 
 		stmt := program.Statements[0].(*ast.ExpressionStatement)
@@ -49,7 +54,13 @@ func TestCallExpressionWithKeywordArgument(t *testing.T) {
 		}
 
 		for k, expected := range tt.expected {
-			testIntegerLiteral(t, h.Data[k], expected)
+			if expected == nil {
+				if h.Data[k] != nil {
+					t.Fatalf("Expect argument content to be empty. got=%v", h.Data[k])
+				}
+			} else {
+				testIntegerLiteral(t, h.Data[k], expected.(int))
+			}
 		}
 	}
 }
